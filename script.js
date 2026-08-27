@@ -142,8 +142,8 @@ let totalConversations=0;
 /* =====================================================
 LOAD PROPERTIES FROM FIRESTORE
 ===================================================== */
-
-async function loadPropertiesFromFirebase(){
+    
+    async function loadPropertiesFromFirebase(){
 
     try{
 
@@ -153,6 +153,7 @@ async function loadPropertiesFromFirebase(){
             collection(db, "properties")
         );
 
+        // Clear existing properties
         Object.keys(properties).forEach(function(key){
             delete properties[key];
         });
@@ -163,26 +164,117 @@ async function loadPropertiesFromFirebase(){
 
             properties[docSnapshot.id] = {
 
-                uid: data.uid || docSnapshot.id,
-                account: data.account || "",
-                owner: data.owner || "",
-                value: data.value || "",
-                street: data.street || "",
-                city: data.city || "",
-                zip: data.zip || "",
-                mailing: data.mailing || "",
-                building: data.building || "",
-                legal: data.legal || "",
-                contact: data.contact || "",
-                designation: data.designation || "",
-                wireless: data.wireless || "",
-                direct: data.direct || "",
-                email: data.email || "",
-                agent: data.agent || "",
-                attempt: Number(data.attempt || 1),
-                status: data.status || "Active",
-                followup: data.followup || "",
-                calls: data.calls || []
+                uid:
+                    data.uid ||
+                    docSnapshot.id,
+
+                account:
+                    data.account ||
+                    data.acct ||
+                    "",
+
+                owner:
+                    data.owner ||
+                    data["Owner"] ||
+                    data["Cad Legal Name"] ||
+                    data["CAD Legal Name"] ||
+                    "",
+
+                // ✅ ACCEPTS ALL VALUE COLUMN VARIATIONS
+                value:
+                    data["Assessed Value"] ??
+                    data["assessed_value"] ??
+                    data["assessed value"] ??
+                    data["value"] ??
+                    data.value ??
+                    "",
+
+                street:
+                    data.street ||
+                    data["site_addr_1"] ||
+                    data["Site Address"] ||
+                    "",
+
+                city:
+                    data.city ||
+                    data["site_addr_2"] ||
+                    "",
+
+                zip:
+                    data.zip ||
+                    data["site_addr_3"] ||
+                    "",
+
+                mailing:
+                    data.mailing ||
+                    data["mail_addr_1"] ||
+                    data["mail_addr_2"] ||
+                    "",
+
+                building:
+                    data.building ||
+                    data["Building Type"] ||
+                    "",
+
+                legal:
+                    data.legal ||
+                    data["Cad Legal Name"] ||
+                    data["CAD Legal Name"] ||
+                    "",
+
+                contact:
+                    data.contact ||
+                    data["Contact 1 Name"] ||
+                    "",
+
+                designation:
+                    data.designation ||
+                    data["Contact 1 Designation"] ||
+                    data["Contact 1   Designation"] ||
+                    "",
+
+                // ✅ PHONE NUMBER VARIATIONS
+                wireless:
+                    data.wireless ||
+                    data["WirelessNumber"] ||
+                    data["Wireless Number"] ||
+                    "",
+
+                direct:
+                    data.direct ||
+                    data["DirectDial"] ||
+                    data["Direct Dial"] ||
+                    "",
+
+                // ✅ EMAIL VARIATIONS
+                email:
+                    data.email ||
+                    data["Contact 1 Official E-Mail"] ||
+                    data["Contact 1 Official Email"] ||
+                    data["Contact 1 Personal E-Mail"] ||
+                    data["Contact 1 Personal Email"] ||
+                    "",
+
+                agent:
+                    data.agent ||
+                    data["Assigned Agent"] ||
+                    "",
+
+                attempt:
+                    Number(data.attempt || 1),
+
+                status:
+                    data.status ||
+                    "Active",
+
+                followup:
+                    data.followup ||
+                    "",
+
+                calls:
+                    Array.isArray(data.calls)
+                    ? data.calls
+                    : []
 
             };
 
@@ -194,8 +286,11 @@ async function loadPropertiesFromFirebase(){
         );
 
         if(loggedInUser){
+
             renderProperties();
+
             updateDashboard();
+
         }
 
     }catch(error){
@@ -212,7 +307,6 @@ async function loadPropertiesFromFirebase(){
     }
 
 }
-
 
 /* =====================================================
 LOGIN
