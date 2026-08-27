@@ -1,9 +1,4 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
-import {
-    getFirestore,
-    collection,
-    getDocs
-} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCRt1cjbvGe2bkes4VWBPx2QCStUKGWyUs",
@@ -16,6 +11,4 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-const db = getFirestore(app);
-
-export { db, collection, getDocs };
+console.log("Firebase connected successfully");
