@@ -139,6 +139,80 @@ let currentBucket="Active";
 let totalDials=0;
 let totalConversations=0;
 
+/* =====================================================
+LOAD PROPERTIES FROM FIRESTORE
+===================================================== */
+
+async function loadPropertiesFromFirebase(){
+
+    try{
+
+        console.log("🔥 Loading properties from Firestore...");
+
+        const snapshot = await getDocs(
+            collection(db, "properties")
+        );
+
+        Object.keys(properties).forEach(function(key){
+            delete properties[key];
+        });
+
+        snapshot.forEach(function(docSnapshot){
+
+            const data = docSnapshot.data();
+
+            properties[docSnapshot.id] = {
+
+                uid: data.uid || docSnapshot.id,
+                account: data.account || "",
+                owner: data.owner || "",
+                value: data.value || "",
+                street: data.street || "",
+                city: data.city || "",
+                zip: data.zip || "",
+                mailing: data.mailing || "",
+                building: data.building || "",
+                legal: data.legal || "",
+                contact: data.contact || "",
+                designation: data.designation || "",
+                wireless: data.wireless || "",
+                direct: data.direct || "",
+                email: data.email || "",
+                agent: data.agent || "",
+                attempt: Number(data.attempt || 1),
+                status: data.status || "Active",
+                followup: data.followup || "",
+                calls: data.calls || []
+
+            };
+
+        });
+
+        console.log(
+            "🔥 Properties loaded:",
+            Object.keys(properties).length
+        );
+
+        if(loggedInUser){
+            renderProperties();
+            updateDashboard();
+        }
+
+    }catch(error){
+
+        console.error(
+            "❌ Error loading properties:",
+            error
+        );
+
+        alert(
+            "Could not load properties from Firebase. Check the browser console."
+        );
+
+    }
+
+}
+
 
 /* =====================================================
 LOGIN
@@ -178,7 +252,11 @@ document.getElementById("loggedInUser")
 
 setupRole();
 
+setupRole();
+
 showPage("dashboard");
+
+loadPropertiesFromFirebase();
 
 }else{
 
@@ -1284,5 +1362,6 @@ window.saveCall = saveCall;
 window.openCreateAgentModal = openCreateAgentModal;
 window.closeCreateAgentModal = closeCreateAgentModal;
 window.createAgent = createAgent;
+window.loadPropertiesFromFirebase = loadPropertiesFromFirebase;
 
 console.log("PARK CRM functions exposed:", typeof window.login);
