@@ -1284,3 +1284,5 @@ window.saveCall = saveCall;
 window.openCreateAgentModal = openCreateAgentModal;
 window.closeCreateAgentModal = closeCreateAgentModal;
 window.createAgent = createAgent;
+
+console.log("PARK CRM functions exposed:", typeof window.login);
