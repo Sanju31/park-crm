@@ -1,1 +1,1242 @@
 
+const users = {
+
+admin:{
+username:"admin",
+password:"admin123",
+name:"Administrator",
+role:"Admin",
+active:true
+},
+
+sam:{
+username:"sam",
+password:"sam123",
+name:"Sam Walter",
+role:"Agent",
+active:true
+},
+
+julia:{
+username:"julia",
+password:"julia123",
+name:"Julia Carter",
+role:"Agent",
+active:true
+}
+
+};
+
+
+let loggedInUser=null;
+
+
+/* =====================================================
+PROPERTY DATA
+===================================================== */
+
+const properties={
+
+"TX_2027_HR_D1_007":{
+
+uid:"TX_2027_HR_D1_007",
+account:"1229580010001",
+owner:"DOMAIN INVESTMENT LLC",
+value:"$5,392,552",
+street:"10030 BISSONNET ST",
+city:"HOUSTON",
+zip:"77036",
+mailing:"10040 BISSONNET ST",
+building:"Warehouse - Metallic",
+legal:"DOMAIN INVESTMENT LLC",
+contact:"Alexander Leon",
+designation:"Manager",
+wireless:"713-253-7888",
+direct:"",
+email:"alex@rtwwheels.com",
+agent:"Sam Walter",
+attempt:1,
+status:"Active",
+followup:"",
+calls:[]
+
+},
+
+"TX_2027_HR_D1_111":{
+
+uid:"TX_2027_HR_D1_111",
+account:"1034560000008",
+owner:"ELEVIA INC",
+value:"$8,120,955",
+street:"13194 BELLAIRE BLVD",
+city:"HOUSTON",
+zip:"77072",
+mailing:"11900 BELLAIRE BLVD",
+building:"Medical Office",
+legal:"ELEVIA INC",
+contact:"Jennifer Dao",
+designation:"Vice President",
+wireless:"281-919-9929",
+direct:"281-584-9928",
+email:"jenidao@hotmail.com",
+agent:"Julia Carter",
+attempt:1,
+status:"Active",
+followup:"",
+calls:[]
+
+}
+
+};
+
+
+let currentProperty=null;
+let currentBucket="Active";
+
+let totalDials=0;
+let totalConversations=0;
+
+
+/* =====================================================
+LOGIN
+===================================================== */
+
+function login(){
+
+const username=
+document.getElementById("loginUsername").value
+.trim()
+.toLowerCase();
+
+const password=
+document.getElementById("loginPassword").value;
+
+const user=users[username];
+
+
+if(
+user &&
+user.password===password &&
+user.active
+){
+
+loggedInUser=user;
+
+document.getElementById("loginPage")
+.style.display="none";
+
+document.getElementById("crmApplication")
+.style.display="block";
+
+document.getElementById("loggedInUser")
+.innerHTML=
+"👤 "+user.name+
+" <span style='color:#6b7280'>("+user.role+")</span>";
+
+setupRole();
+
+showPage("dashboard");
+
+}else{
+
+document.getElementById("loginError")
+.style.display="block";
+
+}
+
+}
+
+
+function logout(){
+
+loggedInUser=null;
+
+document.getElementById("crmApplication")
+.style.display="none";
+
+document.getElementById("loginPage")
+.style.display="flex";
+
+document.getElementById("loginUsername").value="";
+document.getElementById("loginPassword").value="";
+
+}
+
+
+/* ENTER KEY LOGIN */
+
+document.getElementById("loginPassword")
+.addEventListener("keydown",function(e){
+
+if(e.key==="Enter"){
+login();
+}
+
+});
+
+
+/* =====================================================
+ROLE ACCESS
+===================================================== */
+
+function setupRole(){
+
+const adminOnly=
+document.querySelectorAll(".admin-only");
+
+adminOnly.forEach(element=>{
+
+element.style.display=
+loggedInUser.role==="Admin"
+? "block"
+: "none";
+
+});
+
+
+if(loggedInUser.role==="Admin"){
+
+document.getElementById("propertySubtitle").innerText=
+"All properties";
+
+document.getElementById("dashboardSubtitle").innerText=
+"Administrator Overview";
+
+}else{
+
+document.getElementById("propertySubtitle").innerText=
+"Your assigned properties";
+
+document.getElementById("dashboardSubtitle").innerText=
+"My Performance";
+
+}
+
+}
+
+
+/* =====================================================
+NAVIGATION
+===================================================== */
+
+function hidePages(){
+
+document.getElementById("dashboardPage").style.display="none";
+document.getElementById("propertiesPage").style.display="none";
+document.getElementById("propertyDetail").style.display="none";
+document.getElementById("callsPage").style.display="none";
+document.getElementById("agentsPage").style.display="none";
+document.getElementById("reportsPage").style.display="none";
+
+}
+
+
+function showPage(page){
+
+hidePages();
+
+if(page==="dashboard"){
+document.getElementById("dashboardPage").style.display="block";
+}
+
+if(page==="properties"){
+showBucket("Active");
+}
+
+if(page==="calls"){
+document.getElementById("callsPage").style.display="block";
+renderAllCalls();
+}
+
+if(page==="agents"){
+
+if(loggedInUser.role!=="Admin"){
+alert("Admin access only.");
+return;
+}
+
+document.getElementById("agentsPage").style.display="block";
+
+renderAgents();
+
+}
+
+if(page==="reports"){
+document.getElementById("reportsPage").style.display="block";
+}
+
+}
+
+
+function showBucket(bucket){
+
+currentBucket=bucket;
+
+hidePages();
+
+document.getElementById("propertiesPage")
+.style.display="block";
+
+document.getElementById("bucketTitle")
+.innerText=
+bucket==="Active"
+? "Active Properties"
+: bucket;
+
+renderProperties();
+
+}
+
+
+/* =====================================================
+PROPERTY VISIBILITY
+===================================================== */
+
+function canSeeProperty(p){
+
+if(loggedInUser.role==="Admin"){
+return true;
+}
+
+return p.agent===loggedInUser.name;
+
+}
+
+
+/* =====================================================
+RENDER PROPERTIES
+===================================================== */
+
+function renderProperties(){
+
+    const body = document.getElementById("propertyTableBody");
+
+    body.innerHTML = "";
+
+    let found = false;
+
+    Object.values(properties).forEach(function(p){
+
+        /* Agent can only see their own properties */
+        if(!canSeeProperty(p)){
+            return;
+        }
+
+        /*
+        IMPORTANT:
+        Only show a property when its actual
+        status exactly matches the selected bucket.
+        */
+        if(String(p.status).trim() !== String(currentBucket).trim()){
+            return;
+        }
+
+        found = true;
+
+        const row = document.createElement("tr");
+
+        row.className = "property-row";
+
+        row.onclick = function(){
+            openProperty(p.uid);
+        };
+
+        row.innerHTML = `
+
+            <td>${p.uid}</td>
+
+            <td>${p.owner}</td>
+
+            <td>${p.street}</td>
+
+            <td>${p.value}</td>
+
+            <td>${p.agent}</td>
+
+            <td>
+
+                <span class="attempt-badge">
+
+                    ${p.attempt} of 3
+
+                </span>
+
+            </td>
+
+            <td>
+
+                <span class="status">
+
+                    ${p.status}
+
+                </span>
+
+            </td>
+
+        `;
+
+        body.appendChild(row);
+
+    });
+
+
+    if(!found){
+
+        body.innerHTML = `
+
+            <tr>
+
+                <td colspan="7">
+
+                    <div class="empty">
+
+                        No properties in this bucket.
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+        `;
+
+    }
+
+    updateDashboard();
+
+}
+
+/* =====================================================
+OPEN PROPERTY
+===================================================== */
+
+function openProperty(uid){
+
+const p=properties[uid];
+
+if(!canSeeProperty(p)){
+
+alert("You can only access properties assigned to you.");
+
+return;
+
+}
+
+currentProperty=p;
+
+hidePages();
+
+document.getElementById("propertyDetail")
+.style.display="block";
+
+
+document.getElementById("detailOwner")
+.innerText=p.owner;
+
+document.getElementById("detailUID")
+.innerText="UID: "+p.uid;
+
+document.getElementById("detailUID2")
+.innerText=p.uid;
+
+document.getElementById("detailAccount")
+.innerText=p.account;
+
+document.getElementById("detailValue")
+.innerText=p.value;
+
+document.getElementById("detailBuilding")
+.innerText=p.building;
+
+document.getElementById("detailLegal")
+.innerText=p.legal;
+
+document.getElementById("detailStreet")
+.innerText=p.street;
+
+document.getElementById("detailCity")
+.innerText=p.city;
+
+document.getElementById("detailZip")
+.innerText=p.zip;
+
+document.getElementById("detailMailing")
+.innerText=p.mailing;
+
+document.getElementById("detailContact")
+.innerText=p.contact;
+
+document.getElementById("detailDesignation")
+.innerText=p.designation;
+
+document.getElementById("detailWireless")
+.innerText=p.wireless;
+
+document.getElementById("detailDirect")
+.innerText=p.direct || "—";
+
+document.getElementById("detailEmail")
+.innerText=p.email || "—";
+
+document.getElementById("detailAgent")
+.innerText=p.agent;
+
+document.getElementById("detailAttempt")
+.innerText=p.attempt+" of 3";
+
+document.getElementById("detailStatus")
+.innerText=p.status;
+
+document.getElementById("detailFollowup")
+.innerText=p.followup || "—";
+
+renderCallHistory();
+
+}
+
+
+/* =====================================================
+CALL MODAL
+===================================================== */
+
+function openCallModal(){
+
+const p=currentProperty;
+
+document.getElementById("modalOwner")
+.innerText=p.owner;
+
+document.getElementById("modalUID")
+.innerText="UID: "+p.uid;
+
+document.getElementById("callAgent")
+.value=p.agent;
+
+document.getElementById("currentAttempt")
+.value=p.attempt+" of 3";
+
+document.getElementById("callDate")
+.value=new Date().toLocaleString();
+
+document.getElementById("callConnect").value="";
+document.getElementById("callDisposition").value="";
+document.getElementById("followupDate").value="";
+document.getElementById("callRemarks").value="";
+
+document.getElementById("followupBox")
+.style.display="none";
+
+document.getElementById("bucketMessage")
+.style.display="none";
+
+document.getElementById("attemptMessage")
+.style.display="none";
+
+document.getElementById("callModal")
+.style.display="flex";
+
+}
+
+
+function closeCallModal(){
+
+document.getElementById("callModal")
+.style.display="none";
+
+}
+
+
+/* =====================================================
+DISPOSITION
+===================================================== */
+
+function handleDisposition(){
+
+const d=
+document.getElementById("callDisposition").value;
+
+const follow=
+document.getElementById("followupBox");
+
+const bucket=
+document.getElementById("bucketMessage");
+
+const attempt=
+document.getElementById("attemptMessage");
+
+follow.style.display="none";
+bucket.style.display="none";
+attempt.style.display="none";
+
+
+if(d==="Callback"){
+
+follow.style.display="block";
+bucket.style.display="block";
+
+bucket.innerHTML=
+"📅 This property will move to the <strong>Follow-Up</strong> bucket.";
+
+}
+
+
+else if(d==="Email Requested"){
+
+follow.style.display="block";
+bucket.style.display="block";
+
+bucket.innerHTML=
+"📧 This property will move to the <strong>Follow-Up</strong> bucket.";
+
+}
+
+
+else if(
+d==="Voicemail" ||
+d==="No Answer"
+){
+
+attempt.style.display="block";
+
+if(currentProperty.attempt<3){
+
+attempt.innerHTML=
+"📞 This unsuccessful call will advance the property to <strong>Attempt "+
+(currentProperty.attempt+1)+
+"</strong>.";
+
+}else{
+
+attempt.innerHTML=
+"✅ This is Attempt 3. After saving, the property will move to <strong>Completed</strong>.";
+
+}
+
+}
+
+
+else if(d==="Not Interested"){
+
+bucket.style.display="block";
+
+bucket.innerHTML=
+"🚫 This property will move to <strong>Not Interested</strong>.";
+
+}
+
+
+else if(d==="No Longer Owns Property"){
+
+bucket.style.display="block";
+
+bucket.innerHTML=
+"🏠 This property will move to <strong>No Longer Owns Property</strong>.";
+
+}
+
+
+else if(
+d==="Disconnected" ||
+d==="Wrong Number"
+){
+
+bucket.style.display="block";
+
+bucket.innerHTML=
+"📵 This property will move to <strong>Invalid Contact</strong>.";
+
+}
+
+
+else if(d==="Qualified"){
+
+bucket.style.display="block";
+
+bucket.innerHTML=
+"⭐ This property will move to <strong>Qualified</strong>.";
+
+}
+
+
+else if(d==="Signed"){
+
+bucket.style.display="block";
+
+bucket.innerHTML=
+"✅ This property will move to <strong>Sales</strong>.";
+
+}
+
+}
+
+
+/* =====================================================
+SAVE CALL
+===================================================== */
+
+function saveCall(){
+
+const p=currentProperty;
+
+const connect=
+document.getElementById("callConnect").value;
+
+const disposition=
+document.getElementById("callDisposition").value;
+
+const followup=
+document.getElementById("followupDate").value;
+
+const remarks=
+document.getElementById("callRemarks").value;
+
+const date=
+document.getElementById("callDate").value;
+
+
+if(!connect){
+
+alert("Please select Connect.");
+
+return;
+
+}
+
+if(!disposition){
+
+alert("Please select Disposition.");
+
+return;
+
+}
+
+
+if(
+(disposition==="Callback" ||
+disposition==="Email Requested")
+&&
+!followup
+){
+
+alert("Please select a Follow-Up Date.");
+
+return;
+
+}
+
+
+let newStatus=p.status;
+let newAttempt=p.attempt;
+
+
+if(disposition==="Callback"){
+
+newStatus="Follow-Up";
+
+}
+
+
+else if(disposition==="Email Requested"){
+
+newStatus="Follow-Up";
+
+}
+
+
+else if(disposition==="Not Interested"){
+
+newStatus="Not Interested";
+
+}
+
+
+else if(disposition==="No Longer Owns Property"){
+
+newStatus="No Longer Owns Property";
+
+}
+
+
+else if(
+disposition==="Disconnected" ||
+disposition==="Wrong Number"
+){
+
+newStatus="Invalid Contact";
+
+}
+
+
+else if(disposition==="Qualified"){
+
+newStatus="Qualified";
+
+}
+
+
+else if(disposition==="Signed"){
+
+newStatus="Sales";
+
+}
+
+
+if(
+disposition==="Voicemail" ||
+disposition==="No Answer"
+){
+
+if(p.attempt<3){
+
+newAttempt=p.attempt+1;
+newStatus="Active";
+
+}else{
+
+newAttempt=3;
+newStatus="Completed";
+
+}
+
+}
+
+
+p.calls.unshift({
+
+date:date,
+agent:p.agent,
+attempt:p.attempt,
+connect:connect,
+disposition:disposition,
+followup:followup,
+remarks:remarks,
+status:newStatus
+
+});
+
+
+p.attempt=newAttempt;
+
+p.status=newStatus;
+
+p.followup=followup || "";
+
+console.log("PROPERTY AFTER SAVE:", {
+    uid: p.uid,
+    oldStatus: currentBucket,
+    newStatus: p.status,
+    attempt: p.attempt
+});
+
+
+totalDials++;
+
+if(connect==="Yes"){
+totalConversations++;
+}
+
+
+if(p.agent==="Sam Walter"){
+
+document.getElementById("samDials")
+.innerText=
+parseInt(
+document.getElementById("samDials").innerText
+)+1;
+
+if(connect==="Yes"){
+
+document.getElementById("samConversations")
+.innerText=
+parseInt(
+document.getElementById("samConversations").innerText
+)+1;
+
+}
+
+}
+
+
+if(p.agent==="Julia Carter"){
+
+document.getElementById("juliaDials")
+.innerText=
+parseInt(
+document.getElementById("juliaDials").innerText
+)+1;
+
+if(connect==="Yes"){
+
+document.getElementById("juliaConversations")
+.innerText=
+parseInt(
+document.getElementById("juliaConversations").innerText
+)+1;
+
+}
+
+}
+
+
+closeCallModal();
+
+renderAllCalls();
+
+updateDashboard();
+
+/* Immediately move the property to its new bucket */
+showBucket(p.status);
+
+alert(
+
+"Call saved successfully.\n\n"+
+
+"CRM Status: "+p.status+
+
+"\nAttempt: "+p.attempt+" of 3"
+
+);
+}
+
+
+/* =====================================================
+CALL HISTORY
+===================================================== */
+
+function renderCallHistory(){
+
+const box=
+document.getElementById("callHistory");
+
+const p=currentProperty;
+
+if(p.calls.length===0){
+
+box.innerHTML=
+'<p style="color:#6b7280">No calls recorded yet.</p>';
+
+return;
+
+}
+
+box.innerHTML="";
+
+
+p.calls.forEach(c=>{
+
+const div=document.createElement("div");
+
+div.className="call-entry";
+
+
+div.innerHTML=`
+
+<strong>${c.agent}</strong>
+
+<br>
+
+<small>
+
+${c.date}
+|
+Attempt ${c.attempt}
+|
+Connect: ${c.connect}
+|
+${c.disposition}
+
+</small>
+
+${c.followup
+? `<br><small>📅 Follow-Up: ${c.followup}</small>`
+:""}
+
+${c.remarks
+? `<br><br>${c.remarks}`
+:""}
+
+<br>
+
+<small>
+
+Status after call:
+<strong>${c.status}</strong>
+
+</small>
+
+`;
+
+box.appendChild(div);
+
+});
+
+}
+
+
+/* =====================================================
+ALL CALLS
+===================================================== */
+
+function renderAllCalls(){
+
+const box=
+document.getElementById("allCalls");
+
+box.innerHTML="";
+
+let count=0;
+
+
+Object.values(properties).forEach(p=>{
+
+if(!canSeeProperty(p)) return;
+
+
+p.calls.forEach(c=>{
+
+count++;
+
+
+const div=
+document.createElement("div");
+
+div.className="call-entry";
+
+
+div.innerHTML=`
+
+<strong>${p.owner}</strong>
+-
+${c.agent}
+
+<br>
+
+<small>
+
+${c.date}
+|
+Attempt ${c.attempt}
+|
+${c.disposition}
+|
+Status: ${c.status}
+
+</small>
+
+`;
+
+box.appendChild(div);
+
+});
+
+});
+
+
+if(count===0){
+
+box.innerHTML=
+'<div class="empty">No calls recorded yet.</div>';
+
+}
+
+}
+
+
+/* =====================================================
+DASHBOARD
+===================================================== */
+
+function updateDashboard(){
+
+let active=0;
+let follow=0;
+let qualified=0;
+let notInterested=0;
+let invalid=0;
+let completed=0;
+
+
+Object.values(properties).forEach(p=>{
+
+if(!canSeeProperty(p)) return;
+
+if(p.status==="Active") active++;
+
+if(p.status==="Follow-Up") follow++;
+
+if(p.status==="Qualified") qualified++;
+
+if(p.status==="Not Interested") notInterested++;
+
+if(p.status==="Invalid Contact") invalid++;
+
+if(p.status==="Completed") completed++;
+
+});
+
+
+document.getElementById("activeCount")
+.innerText=active;
+
+document.getElementById("followupCount")
+.innerText=follow;
+
+document.getElementById("totalQualified")
+.innerText=qualified;
+
+document.getElementById("notInterestedCount")
+.innerText=notInterested;
+
+document.getElementById("invalidCount")
+.innerText=invalid;
+
+document.getElementById("completedCount")
+.innerText=completed;
+
+document.getElementById("totalDials")
+.innerText=totalDials;
+
+document.getElementById("totalConversations")
+.innerText=totalConversations;
+
+}
+
+
+/* =====================================================
+ADMIN: AGENT MANAGEMENT
+===================================================== */
+
+function renderAgents(){
+
+const body=
+document.getElementById("agentsTableBody");
+
+body.innerHTML="";
+
+
+Object.values(users).forEach(user=>{
+
+if(user.role!=="Agent") return;
+
+
+const row=
+document.createElement("tr");
+
+
+row.innerHTML=`
+
+<td>${user.name}</td>
+
+<td>${user.username}</td>
+
+<td>
+
+<span class="role-badge">
+Agent
+</span>
+
+</td>
+
+<td>
+${user.active ? "Active" : "Inactive"}
+</td>
+
+`;
+
+body.appendChild(row);
+
+});
+
+}
+
+
+function openCreateAgentModal(){
+
+if(loggedInUser.role!=="Admin"){
+
+alert("Admin access only.");
+
+return;
+
+}
+
+document.getElementById("newAgentName").value="";
+document.getElementById("newAgentUsername").value="";
+document.getElementById("newAgentPassword").value="";
+
+document.getElementById("createAgentModal")
+.style.display="flex";
+
+}
+
+
+function closeCreateAgentModal(){
+
+document.getElementById("createAgentModal")
+.style.display="none";
+
+}
+
+
+function createAgent(){
+
+const name=
+document.getElementById("newAgentName")
+.value.trim();
+
+const username=
+document.getElementById("newAgentUsername")
+.value.trim()
+.toLowerCase();
+
+const password=
+document.getElementById("newAgentPassword")
+.value;
+
+
+if(!name || !username || !password){
+
+alert("Please complete all fields.");
+
+return;
+
+}
+
+
+if(users[username]){
+
+alert("That username already exists.");
+
+return;
+
+}
+
+
+users[username]={
+
+username:username,
+password:password,
+name:name,
+role:"Agent",
+active:true
+
+};
+
+
+closeCreateAgentModal();
+
+renderAgents();
+
+alert(
+"Agent created successfully.\n\n"+
+"Username: "+username
+);
+
+}
+
+
+/* =====================================================
+INITIAL
+===================================================== */
+
+renderProperties();
