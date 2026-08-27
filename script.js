@@ -776,232 +776,325 @@ bucket.innerHTML=
 
 }
 
-
 /* =====================================================
-SAVE CALL
+SAVE CALL — FIRESTORE
 ===================================================== */
 
-function saveCall(){
+async function saveCall(){
 
-const p=currentProperty;
+    const p = currentProperty;
 
-const connect=
-document.getElementById("callConnect").value;
+    if(!p){
+        alert("No property selected.");
+        return;
+    }
 
-const disposition=
-document.getElementById("callDisposition").value;
+    const connect =
+        document.getElementById("callConnect").value;
 
-const followup=
-document.getElementById("followupDate").value;
+    const disposition =
+        document.getElementById("callDisposition").value;
 
-const remarks=
-document.getElementById("callRemarks").value;
+    const followup =
+        document.getElementById("followupDate").value;
 
-const date=
-document.getElementById("callDate").value;
+    const remarks =
+        document.getElementById("callRemarks").value;
+
+    const date =
+        document.getElementById("callDate").value;
 
 
-if(!connect){
+    /* =========================
+       VALIDATION
+    ========================= */
 
-alert("Please select Connect.");
+    if(!connect){
 
-return;
+        alert("Please select Connect.");
+        return;
+
+    }
+
+
+    if(!disposition){
+
+        alert("Please select Disposition.");
+        return;
+
+    }
+
+
+    if(
+        (disposition === "Callback" ||
+         disposition === "Email Requested")
+        &&
+        !followup
+    ){
+
+        alert("Please select a Follow-Up Date.");
+        return;
+
+    }
+
+
+    /* =========================
+       CALCULATE NEW STATUS
+    ========================= */
+
+    let newStatus = p.status;
+    let newAttempt = p.attempt;
+
+
+    if(disposition === "Callback"){
+
+        newStatus = "Follow-Up";
+
+    }
+
+    else if(disposition === "Email Requested"){
+
+        newStatus = "Follow-Up";
+
+    }
+
+    else if(disposition === "Not Interested"){
+
+        newStatus = "Not Interested";
+
+    }
+
+    else if(disposition === "No Longer Owns Property"){
+
+        newStatus = "No Longer Owns Property";
+
+    }
+
+    else if(
+        disposition === "Disconnected" ||
+        disposition === "Wrong Number"
+    ){
+
+        newStatus = "Invalid Contact";
+
+    }
+
+    else if(disposition === "Qualified"){
+
+        newStatus = "Qualified";
+
+    }
+
+    else if(disposition === "Signed"){
+
+        newStatus = "Sales";
+
+    }
+
+
+    /* =========================
+       ATTEMPT LOGIC
+    ========================= */
+
+    if(
+        disposition === "Voicemail" ||
+        disposition === "No Answer"
+    ){
+
+        if(p.attempt < 3){
+
+            newAttempt = p.attempt + 1;
+            newStatus = "Active";
+
+        }
+
+        else{
+
+            newAttempt = 3;
+            newStatus = "Completed";
+
+        }
+
+    }
+
+
+    /* =========================
+       CREATE CALL RECORD
+    ========================= */
+
+    const callRecord = {
+
+        date: date,
+
+        agent: p.agent,
+
+        attempt: p.attempt,
+
+        connect: connect,
+
+        disposition: disposition,
+
+        followup: followup,
+
+        remarks: remarks,
+
+        status: newStatus
+
+    };
+
+    /* =========================
+       SAVE TO FIRESTORE
+    ========================= */
+
+    try{
+
+        console.log(
+            "🔥 Saving call to Firestore:",
+            p.uid
+        );
+
+
+        const propertyRef =
+            doc(db, "properties", p.uid);
+
+
+        await updateDoc(
+
+            propertyRef,
+
+            {
+
+                attempt: newAttempt,
+
+                status: newStatus,
+
+                followup: followup || "",
+
+                calls: arrayUnion(callRecord)
+
+            }
+
+        );
+
+
+        console.log(
+            "🔥 Call successfully saved to Firestore."
+        );
+
+
+        /* =========================
+           UPDATE LOCAL PROPERTY
+        ========================= */
+
+        p.calls.unshift(callRecord);
+
+        p.attempt = newAttempt;
+
+        p.status = newStatus;
+
+        p.followup = followup || "";
+
+
+        /* =========================
+           DASHBOARD COUNTERS
+        ========================= */
+
+        totalDials++;
+
+
+        if(connect === "Yes"){
+
+            totalConversations++;
+
+        }
+
+
+        if(p.agent === "Sam Walter"){
+
+            document.getElementById("samDials")
+                .innerText =
+                parseInt(
+                    document.getElementById("samDials").innerText
+                ) + 1;
+
+
+            if(connect === "Yes"){
+
+                document.getElementById("samConversations")
+                    .innerText =
+                    parseInt(
+                        document.getElementById("samConversations").innerText
+                    ) + 1;
+
+            }
+
+        }
+
+
+        if(p.agent === "Julia Carter"){
+
+            document.getElementById("juliaDials")
+                .innerText =
+                parseInt(
+                    document.getElementById("juliaDials").innerText
+                ) + 1;
+
+
+            if(connect === "Yes"){
+
+                document.getElementById("juliaConversations")
+                    .innerText =
+                    parseInt(
+                        document.getElementById("juliaConversations").innerText
+                    ) + 1;
+
+            }
+
+        }
+
+
+        /* =========================
+           REFRESH UI
+        ========================= */
+
+        closeCallModal();
+
+        renderAllCalls();
+
+        updateDashboard();
+
+        showBucket(p.status);
+
+
+        alert(
+
+            "Call saved successfully.\n\n" +
+
+            "CRM Status: " + p.status +
+
+            "\nAttempt: " + p.attempt + " of 3"
+
+        );
+
+    }
+
+
+    catch(error){
+
+        console.error(
+            "❌ Error saving call to Firestore:",
+            error
+        );
+
+
+        alert(
+            "Could not save the call to Firebase.\n\n" +
+            error.message
+        );
+
+    }
 
 }
-
-if(!disposition){
-
-alert("Please select Disposition.");
-
-return;
-
-}
-
-if(
-(disposition==="Callback" ||
-disposition==="Email Requested")
-&&
-!followup
-){
-
-alert("Please select a Follow-Up Date.");
-
-return;
-
-}
-
-
-let newStatus=p.status;
-let newAttempt=p.attempt;
-
-
-if(disposition==="Callback"){
-
-newStatus="Follow-Up";
-
-}
-
-else if(disposition==="Email Requested"){
-
-newStatus="Follow-Up";
-
-}
-
-else if(disposition==="Not Interested"){
-
-newStatus="Not Interested";
-
-}
-
-else if(disposition==="No Longer Owns Property"){
-
-newStatus="No Longer Owns Property";
-
-}
-
-else if(
-disposition==="Disconnected" ||
-disposition==="Wrong Number"
-){
-
-newStatus="Invalid Contact";
-
-}
-
-else if(disposition==="Qualified"){
-
-newStatus="Qualified";
-
-}
-
-else if(disposition==="Signed"){
-
-newStatus="Sales";
-
-}
-
-
-if(
-disposition==="Voicemail" ||
-disposition==="No Answer"
-){
-
-if(p.attempt<3){
-
-newAttempt=p.attempt+1;
-newStatus="Active";
-
-}else{
-
-newAttempt=3;
-newStatus="Completed";
-
-}
-
-}
-
-
-p.calls.unshift({
-
-date:date,
-agent:p.agent,
-attempt:p.attempt,
-connect:connect,
-disposition:disposition,
-followup:followup,
-remarks:remarks,
-status:newStatus
-
-});
-
-
-p.attempt=newAttempt;
-
-p.status=newStatus;
-
-p.followup=followup || "";
-
-
-console.log("PROPERTY AFTER SAVE:",{
-
-uid:p.uid,
-oldStatus:currentBucket,
-newStatus:p.status,
-attempt:p.attempt
-
-});
-
-
-totalDials++;
-
-if(connect==="Yes"){
-totalConversations++;
-}
-
-
-if(p.agent==="Sam Walter"){
-
-document.getElementById("samDials")
-.innerText=
-parseInt(
-document.getElementById("samDials").innerText
-)+1;
-
-if(connect==="Yes"){
-
-document.getElementById("samConversations")
-.innerText=
-parseInt(
-document.getElementById("samConversations").innerText
-)+1;
-
-}
-
-}
-
-
-if(p.agent==="Julia Carter"){
-
-document.getElementById("juliaDials")
-.innerText=
-parseInt(
-document.getElementById("juliaDials").innerText
-)+1;
-
-if(connect==="Yes"){
-
-document.getElementById("juliaConversations")
-.innerText=
-parseInt(
-document.getElementById("juliaConversations").innerText
-)+1;
-
-}
-
-}
-
-
-closeCallModal();
-
-renderAllCalls();
-
-updateDashboard();
-
-showBucket(p.status);
-
-
-alert(
-
-"Call saved successfully.\n\n"+
-
-"CRM Status: "+p.status+
-
-"\nAttempt: "+p.attempt+" of 3"
-
-);
-
-}
-
 
 /* =====================================================
 CALL HISTORY
