@@ -1,34 +1,32 @@
-
 /* =====================================================
 USER ACCOUNTS
 ===================================================== */
 
 const users = {
-const users = {
 
-admin:{
-username:"admin",
-password:"admin123",
-name:"Administrator",
-role:"Admin",
-active:true
-},
+    admin:{
+        username:"admin",
+        password:"admin123",
+        name:"Administrator",
+        role:"Admin",
+        active:true
+    },
 
-sam:{
-username:"sam",
-password:"sam123",
-name:"Sam Walter",
-role:"Agent",
-active:true
-},
+    sam:{
+        username:"sam",
+        password:"sam123",
+        name:"Sam Walter",
+        role:"Agent",
+        active:true
+    },
 
-julia:{
-username:"julia",
-password:"julia123",
-name:"Julia Carter",
-role:"Agent",
-active:true
-}
+    julia:{
+        username:"julia",
+        password:"julia123",
+        name:"Julia Carter",
+        role:"Agent",
+        active:true
+    }
 
 };
 
@@ -314,102 +312,97 @@ RENDER PROPERTIES
 
 function renderProperties(){
 
-    const body = document.getElementById("propertyTableBody");
+const body=document.getElementById("propertyTableBody");
 
-    body.innerHTML = "";
+body.innerHTML="";
 
-    let found = false;
+let found=false;
 
-    Object.values(properties).forEach(function(p){
+Object.values(properties).forEach(function(p){
 
-        /* Agent can only see their own properties */
-        if(!canSeeProperty(p)){
-            return;
-        }
+if(!canSeeProperty(p)){
+return;
+}
 
-        /*
-        IMPORTANT:
-        Only show a property when its actual
-        status exactly matches the selected bucket.
-        */
-        if(String(p.status).trim() !== String(currentBucket).trim()){
-            return;
-        }
+if(String(p.status).trim() !== String(currentBucket).trim()){
+return;
+}
 
-        found = true;
+found=true;
 
-        const row = document.createElement("tr");
+const row=document.createElement("tr");
 
-        row.className = "property-row";
+row.className="property-row";
 
-        row.onclick = function(){
-            openProperty(p.uid);
-        };
+row.onclick=function(){
+openProperty(p.uid);
+};
 
-        row.innerHTML = `
+row.innerHTML=`
 
-            <td>${p.uid}</td>
+<td>${p.uid}</td>
 
-            <td>${p.owner}</td>
+<td>${p.owner}</td>
 
-            <td>${p.street}</td>
+<td>${p.street}</td>
 
-            <td>${p.value}</td>
+<td>${p.value}</td>
 
-            <td>${p.agent}</td>
+<td>${p.agent}</td>
 
-            <td>
+<td>
 
-                <span class="attempt-badge">
+<span class="attempt-badge">
 
-                    ${p.attempt} of 3
+${p.attempt} of 3
 
-                </span>
+</span>
 
-            </td>
+</td>
 
-            <td>
+<td>
 
-                <span class="status">
+<span class="status">
 
-                    ${p.status}
+${p.status}
 
-                </span>
+</span>
 
-            </td>
+</td>
 
-        `;
+`;
 
-        body.appendChild(row);
+body.appendChild(row);
 
-    });
+});
 
 
-    if(!found){
+if(!found){
 
-        body.innerHTML = `
+body.innerHTML=`
 
-            <tr>
+<tr>
 
-                <td colspan="7">
+<td colspan="7">
 
-                    <div class="empty">
+<div class="empty">
 
-                        No properties in this bucket.
+No properties in this bucket.
 
-                    </div>
+</div>
 
-                </td>
+</td>
 
-            </tr>
+</tr>
 
-        `;
-
-    }
-
-    updateDashboard();
+`;
 
 }
+
+updateDashboard();
+
+}
+
 
 /* =====================================================
 OPEN PROPERTY
@@ -433,7 +426,6 @@ hidePages();
 
 document.getElementById("propertyDetail")
 .style.display="block";
-
 
 document.getElementById("detailOwner")
 .innerText=p.owner;
@@ -584,7 +576,6 @@ bucket.innerHTML=
 
 }
 
-
 else if(d==="Email Requested"){
 
 follow.style.display="block";
@@ -594,7 +585,6 @@ bucket.innerHTML=
 "📧 This property will move to the <strong>Follow-Up</strong> bucket.";
 
 }
-
 
 else if(
 d==="Voicemail" ||
@@ -619,7 +609,6 @@ attempt.innerHTML=
 
 }
 
-
 else if(d==="Not Interested"){
 
 bucket.style.display="block";
@@ -629,7 +618,6 @@ bucket.innerHTML=
 
 }
 
-
 else if(d==="No Longer Owns Property"){
 
 bucket.style.display="block";
@@ -638,7 +626,6 @@ bucket.innerHTML=
 "🏠 This property will move to <strong>No Longer Owns Property</strong>.";
 
 }
-
 
 else if(
 d==="Disconnected" ||
@@ -652,7 +639,6 @@ bucket.innerHTML=
 
 }
 
-
 else if(d==="Qualified"){
 
 bucket.style.display="block";
@@ -661,7 +647,6 @@ bucket.innerHTML=
 "⭐ This property will move to <strong>Qualified</strong>.";
 
 }
-
 
 else if(d==="Signed"){
 
@@ -715,7 +700,6 @@ return;
 
 }
 
-
 if(
 (disposition==="Callback" ||
 disposition==="Email Requested")
@@ -740,13 +724,11 @@ newStatus="Follow-Up";
 
 }
 
-
 else if(disposition==="Email Requested"){
 
 newStatus="Follow-Up";
 
 }
-
 
 else if(disposition==="Not Interested"){
 
@@ -754,13 +736,11 @@ newStatus="Not Interested";
 
 }
 
-
 else if(disposition==="No Longer Owns Property"){
 
 newStatus="No Longer Owns Property";
 
 }
-
 
 else if(
 disposition==="Disconnected" ||
@@ -771,13 +751,11 @@ newStatus="Invalid Contact";
 
 }
 
-
 else if(disposition==="Qualified"){
 
 newStatus="Qualified";
 
 }
-
 
 else if(disposition==="Signed"){
 
@@ -826,11 +804,14 @@ p.status=newStatus;
 
 p.followup=followup || "";
 
-console.log("PROPERTY AFTER SAVE:", {
-    uid: p.uid,
-    oldStatus: currentBucket,
-    newStatus: p.status,
-    attempt: p.attempt
+
+console.log("PROPERTY AFTER SAVE:",{
+
+uid:p.uid,
+oldStatus:currentBucket,
+newStatus:p.status,
+attempt:p.attempt
+
 });
 
 
@@ -889,8 +870,8 @@ renderAllCalls();
 
 updateDashboard();
 
-/* Immediately move the property to its new bucket */
 showBucket(p.status);
+
 
 alert(
 
@@ -901,6 +882,7 @@ alert(
 "\nAttempt: "+p.attempt+" of 3"
 
 );
+
 }
 
 
@@ -1195,8 +1177,7 @@ document.getElementById("newAgentUsername")
 .toLowerCase();
 
 const password=
-document.getElementById("newAgentPassword")
-.value;
+document.getElementById("newAgentPassword").value;
 
 
 if(!name || !username || !password){
