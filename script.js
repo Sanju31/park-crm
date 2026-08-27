@@ -1267,3 +1267,20 @@ INITIAL
 
 // Wait until a user logs in before rendering properties
 console.log("PARK CRM loaded successfully.");
+
+/* =====================================================
+MAKE HTML ONCLICK FUNCTIONS AVAILABLE
+===================================================== */
+
+window.login = login;
+window.logout = logout;
+window.showPage = showPage;
+window.showBucket = showBucket;
+window.openProperty = openProperty;
+window.openCallModal = openCallModal;
+window.closeCallModal = closeCallModal;
+window.handleDisposition = handleDisposition;
+window.saveCall = saveCall;
+window.openCreateAgentModal = openCreateAgentModal;
+window.closeCreateAgentModal = closeCreateAgentModal;
+window.createAgent = createAgent;
