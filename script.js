@@ -252,10 +252,9 @@ document.getElementById("loggedInUser")
 
 setupRole();
 
-setupRole();
-
 showPage("dashboard");
 
+console.log("🔥 Calling Firestore property loader...");
 loadPropertiesFromFirebase();
 
 }else{
