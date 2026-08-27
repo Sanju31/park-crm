@@ -1265,4 +1265,5 @@ alert(
 INITIAL
 ===================================================== */
 
-renderProperties();
+// Wait until a user logs in before rendering properties
+console.log("PARK CRM loaded successfully.");
